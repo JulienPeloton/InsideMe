@@ -87,91 +87,65 @@ class Plot_Data():
 		"""
 		pass
 
+	def format_data_piechart_js_perproc(
+		self, areas=['Time spent (s)', 'Average memory (Mb)'],
+		divs=['myDiv', 'myDiv2'], proc='0'):
+		"""
+
+		"""
+		js = ''
+		for pos, area in enumerate(areas):
+			js += 'var data = [{'
+			js += 'values: ['
+			for k in self.data[proc].keys():
+				js += '%.3f, ' % self.data[proc][k][area]
+			js += '],'
+			js += 'labels: ['
+			for k in self.data[proc].keys():
+				js += '"%s", ' % k
+			js += '],'
+			js += "type: 'pie',"
+			js += 'opacity: 0.9,'
+			js += 'pull: 0.05}];'
+			js += '\n'
+			js += 'var layout = {'
+			js += 'title: "%s",' % area
+			js += 'height: 400,'
+			js += 'width: 500};'
+			js += '\n'
+			js += "Plotly.newPlot('%s', data, layout);" % divs[pos]
+
+		return js
+
 	def pie_chart(self):
-		proc = '1'
-		js = []
-		js.append('Time spent (s)')
-		for k in self.data[proc].keys():
-			js.append(self.data[proc][k]['Time spent (s)'])
-			js.append(k)
-		js.append('Average memory (Mb)')
-		for k in self.data[proc].keys():
-			js.append(self.data[proc][k]['Average memory (Mb)'])
-			js.append(k)
+		for proc in self.data.keys():
+			js = self.format_data_piechart_js_perproc(
+				areas=['Time spent (s)', 'Average memory (Mb)'],
+				divs=['myDiv', 'myDiv2'],
+				proc=proc)
+			# with open(os.path.join(self.output, 'proc%s.html' % proc), 'w') as f:
+			with open(os.path.join(self.output, 'proc%s.html' % proc), 'a') as f:
+				f.write("""
+				<html>
+					<head>
+				        <!-- Plotly.js -->
+				        <script type="text/javascript" src="https://cdn.plot.ly/plotly-1.27.0.min.js"></script>
+				    </head>
+					<body>
+						<div id="myDiv" style="width: 950px; height: 350px;">
+							<!-- Plotly chart will be drawn inside this DIV -->
+						</div>
 
-		with open(os.path.join('./', 'index.html'), 'w') as f:
-			f.write("""
-			<html>
-				<head>
-			        <!-- Plotly.js -->
-			        <script type="text/javascript" src="https://cdn.plot.ly/plotly-1.27.0.min.js"></script>
-			    </head>
-				<body>
-					<div id="myDiv" style="width: 350px; height: 350px;">
-						<!-- Plotly chart will be drawn inside this DIV -->
-					</div>
+						<div id="myDiv2" style="width: 950px; height: 350px;">
+							<!-- Plotly chart will be drawn inside this DIV -->
+						</div>
 
-					<div id="myDiv2" style="width: 350px; height: 350px;">
-						<!-- Plotly chart will be drawn inside this DIV -->
-					</div>
+						<script>
+						%s
+						</script>
 
-					<div id="myDiv3" style="width: 350px; height: 350px;">
-						<!-- Plotly chart will be drawn inside this DIV -->
-					</div>
-
-					<script>
-						var data = [{
-							values: [%.3f, %.3f],
-							labels: ["%s", "%s"],
-							type: 'pie',
-							opacity: 0.9,
-							domain: {
-								x: [0., 0.48],
-								y: [0., 1.0]}
-							},
-							{
-							values: [10,4],
-							labels: ["toto", "titi"],
-							type: 'pie',
-							domain: {
-								x: [0.48, 1.0],
-								y: [0., 1.0]}}];
-
-						var layout = {
-							title: "%s",
-							height: 500,
-							width: 500};
-
-						Plotly.newPlot('myDiv', data, layout);
-
-						var data = [{
-							values: [%.3f, %.3f],
-							labels: ["%s", "%s"],
-							type: 'pie'}];
-
-						var layout = {
-							title: "%s",
-							height: 500,
-							width: 500};
-
-						Plotly.newPlot('myDiv2', data, layout);
-
-						var data = [{
-							values: [10, 40],
-							labels: ["toot", "titi"],
-							type: 'pie'}];
-
-						var layout = {
-							title: "test",
-							height: 500,
-							width: 500};
-
-						Plotly.newPlot('myDiv3', data, layout);
-					</script>
-				</body>
-			</html>""" % (
-				js[1], js[3], js[2], js[4], js[0],
-				js[6], js[8], js[7], js[9], js[5],))
+					</body>
+				</html>""" % (js))
 
 def addargs(parser):
 	''' Parse command line arguments '''
@@ -194,12 +168,6 @@ def main():
 
 	plotter = Plot_Data(processor_data.averaged_stats, processor_data.output)
 	plotter.pie_chart()
-	import SimpleHTTPServer
-	import SocketServer
-	httpd = SocketServer.TCPServer(
-		("", 8001), SimpleHTTPServer.SimpleHTTPRequestHandler)
-	httpd.serve_forever()
-
 
 if __name__ == "__main__":
 		main()
