@@ -3,174 +3,265 @@ import shutil
 import glob
 import argparse
 import numpy as np
+import pylab as pl
 from collections import Counter
 
 class Analyze_Output():
-	""" Yo """
-	def __init__(self, output):
-		"""
-		"""
-		self.output = output
-		self.input_header = [
-			'Processor', 'Number of Processor',
-			'Function', 'Time spent (s)',
-			'Memory Input (Mb)', 'Memory Output (Mb)',
-			'Area']
+    """ Yo """
+    def __init__(self, output):
+        """
+        """
+        self.output = output
+        self.input_header = [
+            'Processor', 'Number of Processor',
+            'Function', 'Time Input (s)', 'Time Output (s)',
+            'Memory Input (Mb)', 'Memory Output (Mb)',
+            'Area']
 
-		self.output_header = [
-			'Area', 'Number of calls', 'Time spent (s)', 'Average memory (Mb)']
+        self.output_header = [
+            'Area', 'Number of calls', 'Time spent (s)', 'Time (s)',
+            'Memory consumption (Mb)']
 
-		if not os.path.isdir(self.output):
-			os.makedirs(self.output)
-			fns = glob.glob('*.log')
-			for fn in fns:
-				shutil.move(fn, self.output)
+        if not os.path.isdir(self.output):
+            os.makedirs(self.output)
+            fns = glob.glob('*.log')
+            for fn in fns:
+                shutil.move(fn, self.output)
 
-		self.full_stats = self.full_stats_all_processors()
-		self.averaged_stats = self.averaged_stats_all_processors(
-			self.full_stats)
+        self.full_stats = self.full_stats_per_processors()
+        self.dic_time_per_processor = self.time_per_processor(self.full_stats)
+        self.dic_memory_per_processor = self.memory_per_processor(self.full_stats)
 
-	def full_stats_all_processors(self):
-		"""
-		"""
-		fns = glob.glob(os.path.join(self.output, '*.log'))
-		dic = {}
-		for fn in fns:
-			data = np.loadtxt(fn, dtype=str, delimiter='/').T
-			proc = data[0][1]
-			dic[proc] = {}
-			for pos, k in enumerate(self.input_header):
-				dic[proc][k] = data[pos]
-		return dic
+    def full_stats_per_processors(self):
+        """
+        """
+        fns = glob.glob(os.path.join(self.output, '*.log'))
+        dic = {}
+        for fn in fns:
+            data = np.loadtxt(fn, dtype=str, delimiter='/').T
+            proc = data[0][1]
+            dic[proc] = {}
+            for pos, k in enumerate(self.input_header):
+                dic[proc][k] = data[pos]
+        return dic
 
-	def averaged_stats_all_processors(self, input_dic):
-		"""
-		"""
-		output_dic = {k:{} for k in input_dic.keys()}
-		for proc in input_dic.keys():
-			output_dic[proc] = {
-				k:{
-					i:j for i,j in zip(self.output_header[1:],[0, [], []])}
-				for k in np.unique(input_dic[proc]['Area'])}
+    def time_per_processor(self, input_dic):
+        """
+        """
+        output_dic = {k:{} for k in input_dic.keys()}
+        for proc in input_dic.keys():
+            ## Dictionary containing the time spent
+            ## per call for all areas, and total number of calls.
+            output_dic[proc] = {
+                k:{i:j for i,j in zip(
+                        ['Number of calls', 'Time spent (s)'], [0, []])}
+                        for k in np.unique(input_dic[proc]['Area'])}
 
-			for pos, area in enumerate(input_dic[proc]['Area']):
-				output_dic[proc][area]['Number of calls'] += 1
-				output_dic[proc][area]['Time spent (s)'].append(
-					float(input_dic[proc]['Time spent (s)'][pos]))
-				output_dic[proc][area]['Average memory (Mb)'].append(
-					float(input_dic[proc]['Memory Output (Mb)'][pos]) -
-					float(input_dic[proc]['Memory Input (Mb)'][pos]))
+            ## Group all times spent per area
+            for pos, area in enumerate(input_dic[proc]['Area']):
+                output_dic[proc][area]['Number of calls'] += 1
 
-			for pos, area in enumerate(output_dic[proc].keys()):
-				output_dic[proc][area]['Time spent (s)'] = np.sum(
-					output_dic[proc][area]['Time spent (s)'])
-				output_dic[proc][area]['Average memory (Mb)'] = np.mean(
-					output_dic[proc][area]['Average memory (Mb)'])
+                time_out = float(input_dic[proc]['Time Output (s)'][pos])
+                time_in = float(input_dic[proc]['Time Input (s)'][pos])
+                output_dic[proc][area]['Time spent (s)'].append(
+                    time_out - time_in)
 
-		return output_dic
+            ## Sum time values per area
+            for pos, area in enumerate(output_dic[proc].keys()):
+                output_dic[proc][area]['Time spent (s)'] = np.sum(
+                    output_dic[proc][area]['Time spent (s)'])
+
+            ## Compute the total amount of time between
+            ## the first call and the last call
+            total_time_recorded = 0.
+            for pos, area in enumerate(output_dic[proc].keys()):
+                total_time_recorded += output_dic[
+                    proc][area]['Time spent (s)']
+
+            ## Find the leftover: total_time - total_time_recorded
+            output_dic[proc]['Others'] = {
+                'Time spent (s)': 0., 'Number of calls': 1.}
+            output_dic[proc]['Others']['Time spent (s)'] = float(
+                input_dic[proc]['Time Output (s)'][-1]) - float(
+                    input_dic[proc]['Time Input (s)'][0]) - total_time_recorded
+
+        return output_dic
+
+    def memory_per_processor(self, input_dic):
+        """
+        """
+        output_dic = {k:{} for k in input_dic.keys()}
+        for proc in input_dic.keys():
+            ## Dictionary containing the memory consumption
+            ## per call for all areas, as a function of time
+            output_dic[proc] = {i:j for i,j in zip(
+                        ['Function',
+                        'Area',
+                        'Memory consumption (Mb)',
+                        'Time (s)'], [[], [], [], []])}
+
+            ## Group all times spent per area
+            for pos, function in enumerate(input_dic[proc]['Function']):
+                output_dic[proc]['Function'].append(function + ' (in)')
+                output_dic[proc]['Function'].append(function + ' (out)')
+                output_dic[proc]['Area'].append(input_dic[proc]['Area'][pos])
+                output_dic[proc]['Area'].append(input_dic[proc]['Area'][pos])
+
+                output_dic[proc]['Memory consumption (Mb)'].append(
+                    float(input_dic[proc]['Memory Input (Mb)'][pos]))
+                output_dic[proc]['Memory consumption (Mb)'].append(
+                    float(input_dic[proc]['Memory Output (Mb)'][pos]))
+
+                output_dic[proc]['Time (s)'].append(
+                    float(input_dic[proc]['Time Input (s)'][pos]))
+                output_dic[proc]['Time (s)'].append(
+                    float(input_dic[proc]['Time Output (s)'][pos]))
+
+        return output_dic
 
 
 class Plot_Data():
-	def __init__(self, data, output):
-		"""
-		"""
-		self.data = data
-		self.output = output
+    def __init__(self, data_time, data_memory, output):
+        """
+        """
+        self.data_time = data_time
+        self.data_memory = data_memory
+        self.output = output
 
-	def dic2json():
-		"""
-		"""
-		pass
+    def format_data_piechart_js_perproc(
+        self, areas=['Time spent (s)', 'Average memory (Mb)'],
+        div='MyDiv', proc='0'):
+        """
 
-	def output_json():
-		"""
-		"""
-		pass
+        """
+        prop_cycle = pl.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
 
-	def format_data_piechart_js_perproc(
-		self, areas=['Time spent (s)', 'Average memory (Mb)'],
-		divs=['myDiv', 'myDiv2'], proc='0'):
-		"""
+        ## Time plot
+        js = ''
+        js += 'var data1 = {'
+        js += 'values: ['
+        for k in self.data_time[proc].keys():
+            js += '%.3f, ' % self.data_time[proc][k]['Time spent (s)']
+        js += '],'
+        js += 'labels: ['
+        for k in self.data_time[proc].keys():
+            js += '"%s", ' % k
+        js += '],'
+        js += 'marker: { colors: ['
+        for pos_k, k in enumerate(self.data_time[proc].keys()):
+            js += '"%s", ' % colors[pos_k]
+        js += ']},'
+        js += 'domain: {'
+        js += 'x: [%.2f, %.2f],' % (0.0, 0.4)
+        js += 'y: [0, 1.0],'
+        js += '},'
+        js += "type: 'pie',"
+        js += "hoverinfo: 'label+percent+value',"
+        js += 'opacity: 0.9,'
+        js += 'hole: 0.2,'
+        js += 'pull: 0.05};'
+        js += '\n'
 
-		"""
-		js = ''
-		for pos, area in enumerate(areas):
-			js += 'var data = [{'
-			js += 'values: ['
-			for k in self.data[proc].keys():
-				js += '%.3f, ' % self.data[proc][k][area]
-			js += '],'
-			js += 'labels: ['
-			for k in self.data[proc].keys():
-				js += '"%s", ' % k
-			js += '],'
-			js += "type: 'pie',"
-			js += 'opacity: 0.9,'
-			js += 'pull: 0.05}];'
-			js += '\n'
-			js += 'var layout = {'
-			js += 'title: "%s",' % area
-			js += 'height: 400,'
-			js += 'width: 500};'
-			js += '\n'
-			js += "Plotly.newPlot('%s', data, layout);" % divs[pos]
+        ## Memory consumption plot
+        js += 'var data2 = {'
+        js += "type: 'scatter',"
+        js += "mode: 'lines+markers',"
+        js += 'x: ['
+        for k in self.data_memory[proc]['Time (s)']:
+            js += '%.3f, ' % (k - self.data_memory[proc]['Time (s)'][0])
+        js += '],'
+        js += 'y: ['
+        for k in self.data_memory[proc]['Memory consumption (Mb)']:
+            js += '%.3f, ' % k
+        js += '],'
+        js += 'text: ['
+        for pos_k, k in enumerate(
+            self.data_memory[proc]['Function']):
+            js += '"%s (%s)", ' % (k, self.data_memory[proc]['Area'][pos_k])
+        js += '],'
+        js += 'line: { color: "%s"},' % colors[-1]
+        js += "name: 'Memory consumption (Mb)',"
+        js += "xaxis: 'x2',"
+        js += "yaxis: 'y2',"
+        js += "hoverinfo: 'text+x+y'"
+        js += '};\n'
 
-		return js
+        js += 'var data = [data1, data2];'
 
-	def pie_chart(self):
-		for proc in self.data.keys():
-			js = self.format_data_piechart_js_perproc(
-				areas=['Time spent (s)', 'Average memory (Mb)'],
-				divs=['myDiv', 'myDiv2'],
-				proc=proc)
-			# with open(os.path.join(self.output, 'proc%s.html' % proc), 'w') as f:
-			with open(os.path.join(self.output, 'proc%s.html' % proc), 'a') as f:
-				f.write("""
-				<html>
-					<head>
-				        <!-- Plotly.js -->
-				        <script type="text/javascript" src="https://cdn.plot.ly/plotly-1.27.0.min.js"></script>
-				    </head>
-					<body>
-						<div id="myDiv" style="width: 950px; height: 350px;">
-							<!-- Plotly chart will be drawn inside this DIV -->
-						</div>
+        js += 'var layout = {'
+        js += 'title: "Processor %d / %d",' % (
+            int(proc) + 1, len(self.data_time.keys()))
+        js += 'xaxis: {domain: [0.0, 0.4],'
+        js += 'zeroline: false, '
+        js += 'showticklabels: false, '
+        js += 'showgrid: false, '
+        js += 'showline: false},'
+        js += 'yaxis: {domain: [0.0, 1.0], zeroline: false, showticklabels: false, showgrid: false, showline: false},'
+        js += "yaxis2: {anchor: 'x2', title: 'Memory consumption (Mb)'},"
+        js += 'xaxis2: {domain: [0.6, 1.0], title: "Time (s)"},'
+        js += 'height: 450,'
+        js += 'width: 1200};'
+        js += '\n'
+        js += "Plotly.newPlot('%s', data, layout);" % div
 
-						<div id="myDiv2" style="width: 950px; height: 350px;">
-							<!-- Plotly chart will be drawn inside this DIV -->
-						</div>
+        return js
 
-						<script>
-						%s
-						</script>
+    def pie_chart(self):
+        divs = ''
+        js = ''
+        sorted_proc = np.sort(self.data_time.keys())
+        for proc in sorted_proc:
+            js += self.format_data_piechart_js_perproc(
+                areas=['Time spent (s)', 'Average memory (Mb)'],
+                div='proc%s' % proc,
+                proc=proc)
+            divs += '<div id="proc%s"' % proc
+            divs += 'style="width: 950px; height: 450px;"></div>'
+        with open(os.path.join(self.output, 'summary_allproc.html'), 'a') as f:
+            f.write("""
+            <html>
+                <head>
+                    <!-- Plotly.js -->
+                    <script type="text/javascript" src="https://cdn.plot.ly/plotly-1.27.0.min.js"></script>
+                </head>
+                <body>
+                    %s
 
-					</body>
-				</html>""" % (js))
+                    <script>
+                    %s
+                    </script>
+
+                </body>
+            </html>""" % (divs, js))
 
 def addargs(parser):
-	''' Parse command line arguments '''
-	parser.add_argument(
-		'--output', dest='output',
-		help='Folder to store outputs', required=True)
+    ''' Parse command line arguments '''
+    parser.add_argument(
+        '--output', dest='output',
+        help='Folder to store outputs', required=True)
 
 def grabargs(args_param=None):
-	''' Parse command line arguments '''
-	parser = argparse.ArgumentParser(description='Analyze logs from ProfileIt')
-	addargs(parser)
-	args = parser.parse_args(args_param)
-	return args
+    ''' Parse command line arguments '''
+    parser = argparse.ArgumentParser(description='Analyze logs from ProfileIt')
+    addargs(parser)
+    args = parser.parse_args(args_param)
+    return args
 
 def main():
-	args_param = None
-	args = grabargs(args_param)
+    args_param = None
+    args = grabargs(args_param)
 
-	processor_data = Analyze_Output(args.output)
+    processor_data = Analyze_Output(args.output)
 
-	plotter = Plot_Data(processor_data.averaged_stats, processor_data.output)
-	plotter.pie_chart()
+    plotter = Plot_Data(
+        processor_data.dic_time_per_processor,
+        processor_data.dic_memory_per_processor,
+        processor_data.output)
+    plotter.pie_chart()
 
 if __name__ == "__main__":
-		main()
+        main()
 
 # from plotlyjs import *
 

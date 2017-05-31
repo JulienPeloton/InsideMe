@@ -46,31 +46,27 @@ def benchmark(CONV=None, field=None):
         ----------
             * func: function, the function to be benchmarked
         """
-        if DEBUG is True:
-            def inner_wrapper(*args, **kwargs):
-                m0 = resource.getrusage(
-                    resource.RUSAGE_SELF).ru_maxrss / MEMORY_CONV
-                t0 = time()
-                res = func(*args, **kwargs)
-                t1 = time()
-                m1 = resource.getrusage(
-                    resource.RUSAGE_SELF).ru_maxrss / MEMORY_CONV
-                fname = 'logproc_%d_%d.log' % (comm.rank, comm.size)
-                if field[0] is None:
-                    name = func.__name__
-                else:
-                    name = field[0]
-                with open(fname, 'a') as f:
-                    f.write("{}/{}/@{}/{:0.3f}/{:0.3f}/{:0.3f}/{}\n".format(
+        def inner_wrapper(*args, **kwargs):
+            m0 = resource.getrusage(
+                resource.RUSAGE_SELF).ru_maxrss / MEMORY_CONV
+            t0 = time()
+            res = func(*args, **kwargs)
+            t1 = time()
+            m1 = resource.getrusage(
+                resource.RUSAGE_SELF).ru_maxrss / MEMORY_CONV
+            fname = 'logproc_%d_%d.log' % (comm.rank, comm.size)
+            if field[0] is None:
+                name = func.__name__
+            else:
+                name = field[0]
+            with open(fname, 'a') as f:
+                f.write(
+                    "{}/{}/@{}/{:0.3f}/{:0.3f}/{:0.3f}/{:0.3f}/{}\n".format(
                         comm.rank, comm.size,
                         func.__name__,
-                        t1 - t0,
-                        m0,
-                        m1,
+                        t0, t1,
+                        m0, m1,
                         name))
-                return res
-        else:
-            def inner_wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
+            return res
         return inner_wrapper
     return outer_wrapper

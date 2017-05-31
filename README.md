@@ -3,20 +3,14 @@ ProfileIt
 
 #### The package
 Simple python module for monitoring memory consumption and time spent.
-Especially relevant when using MPI.
-It does include
-* Simple routines that can be used as decorators to monitor memory consumption of functions and classes
-*
-
-It does not include
-*
+Especially relevant when using MPI, it makes use of decorators.
 
 ### Before starting
 This code has the following dependencies (see the travis install section):
 * numpy, pylab, scipy, etc (required)
 * mpi4py (optional - for parallel computing)
 
-## Installation
+### Installation
 We provide a setup.py for the installation. Just run:
 ```bash
 python setup.py install
@@ -29,13 +23,16 @@ ProfileItPATH=/path/to/the/package
 export PYTHONPATH=$PYTHONPATH:$ProfileItPATH
 ```
 
-### Usage
+### Example
 
 ```python
-Mettre à jour!
+## content of test.py
+
 ```
 You should see then
 
+use that to monitor the job!
+http://localhost:800
 
 ### Problems known
 *
