@@ -197,7 +197,11 @@ class Plot_Data():
         js += 'showticklabels: false, '
         js += 'showgrid: false, '
         js += 'showline: false},'
-        js += 'yaxis: {domain: [0.0, 1.0], zeroline: false, showticklabels: false, showgrid: false, showline: false},'
+        js += 'yaxis: {domain: [0.0, 1.0],'
+        js += 'zeroline: false, '
+        js += 'showticklabels: false, '
+        js += 'showgrid: false, '
+        js += 'showline: false},'
         js += "yaxis2: {anchor: 'x2', title: 'Memory consumption (Mb)'},"
         js += 'xaxis2: {domain: [0.6, 1.0], title: "Time (s)"},'
         js += 'height: 450,'
