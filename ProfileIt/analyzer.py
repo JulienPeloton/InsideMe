@@ -2,9 +2,9 @@ import os
 import shutil
 import glob
 import argparse
+
 import numpy as np
 import pylab as pl
-from collections import Counter
 
 class Analyze_Output():
     """ Yo """
@@ -128,9 +128,100 @@ class Plot_Data():
         self.data_memory = data_memory
         self.output = output
 
-    def format_data_piechart_js_perproc(
-        self, areas=['Time spent (s)', 'Average memory (Mb)'],
-        div='MyDiv', proc='0'):
+    def format_data_piechart_js_allproc(self, div='MyDiv'):
+        """
+
+        """
+        prop_cycle = pl.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+
+        procs = self.data_time.keys()
+        data_time_tot = {i:0 for i in procs}
+        for proc in procs:
+            for k in self.data_time[proc].keys():
+                data_time_tot[proc] += self.data_time[proc][k]['Time spent (s)']
+
+        ## Time plot
+        js = ''
+        js += 'var data1 = {'
+        js += 'values: ['
+        for proc in procs:
+            js += '%.3f, ' % data_time_tot[proc]
+        js += '],'
+        js += 'labels: ['
+        for proc in procs:
+            js += '"Time (s): proc %s", ' % proc
+        js += '],'
+        js += 'marker: { colors: ['
+        for pos_proc, proc in enumerate(procs):
+            js += '"%s", ' % colors[int(proc)]
+        js += ']},'
+        js += 'domain: {'
+        js += 'x: [%.2f, %.2f],' % (0.0, 0.4)
+        js += 'y: [0, 1.0],'
+        js += '},'
+        js += "type: 'pie',"
+        js += "hoverinfo: 'label+percent+value',"
+        js += 'opacity: 0.9,'
+        js += 'hole: 0.2,'
+        js += 'pull: 0.05};'
+        js += '\n'
+
+        ## Memory consumption plot
+        for proc in procs:
+            js += 'var data_proc%s = ' % proc
+            js += '{'
+            js += "type: 'scatter',"
+            js += "mode: 'lines',"
+            js += 'x: ['
+            for k in self.data_memory[proc]['Time (s)']:
+                js += '%.3f, ' % (k - self.data_memory[proc]['Time (s)'][0])
+            js += '],'
+            js += 'y: ['
+            for k in self.data_memory[proc]['Memory consumption (Mb)']:
+                js += '%.3f, ' % k
+            js += '],'
+            # js += 'text: ['
+            # for pos_k, k in enumerate(
+            #     self.data_memory[proc]['Function']):
+            #     js += '"%s (%s)", ' % (k, self.data_memory[proc]['Area'][pos_k])
+            # js += '],'
+            js += 'line: { color: "%s"},' % colors[int(proc)]
+            js += "name: 'Memory (Mb): proc %s'," % proc
+            js += "xaxis: 'x2',"
+            js += "yaxis: 'y2',"
+            js += "hoverinfo: 'name+x+y'"
+            js += '};\n'
+
+        # js += 'var data = [data1, data2];'
+        js += 'var data = [data1, '
+        for proc in procs:
+            js += 'data_proc%s,' % proc
+        js += '];'
+
+        js += 'var layout = {'
+        js += 'title: "Summary all processors (%s)",' % (
+            len(self.data_time.keys()))
+        js += 'xaxis: {domain: [0.0, 0.4],'
+        js += 'zeroline: false, '
+        js += 'showticklabels: false, '
+        js += 'showgrid: false, '
+        js += 'showline: false},'
+        js += 'yaxis: {domain: [0.0, 1.0], title: "Time spent (s)",'
+        js += 'zeroline: false, '
+        js += 'showticklabels: false, '
+        js += 'showgrid: false, '
+        js += 'showline: false},'
+        js += "yaxis2: {anchor: 'x2', title: 'Memory consumption (Mb)'},"
+        js += 'xaxis2: {domain: [0.6, 1.0], title: "Time (s)"},'
+        js += 'height: 450,'
+        js += 'width: 1200};'
+        js += '\n'
+        js += "Plotly.newPlot('%s', data, layout);" % div
+
+        return js
+
+    def format_data_piechart_js_perproc(self, div='MyDiv', proc='0'):
         """
 
         """
@@ -190,14 +281,13 @@ class Plot_Data():
         js += 'var data = [data1, data2];'
 
         js += 'var layout = {'
-        js += 'title: "Processor %d / %d",' % (
-            int(proc) + 1, len(self.data_time.keys()))
+        js += 'title: "Processor %d",' % (int(proc))
         js += 'xaxis: {domain: [0.0, 0.4],'
         js += 'zeroline: false, '
         js += 'showticklabels: false, '
         js += 'showgrid: false, '
         js += 'showline: false},'
-        js += 'yaxis: {domain: [0.0, 1.0],'
+        js += 'yaxis: {domain: [0.0, 1.0], title: "Time spent (s)",'
         js += 'zeroline: false, '
         js += 'showticklabels: false, '
         js += 'showgrid: false, '
@@ -214,12 +304,13 @@ class Plot_Data():
     def pie_chart(self):
         divs = ''
         js = ''
+        js += self.format_data_piechart_js_allproc(div='allprocs')
+        divs += '<div id="allprocs"'
+        divs += 'style="width: 950px; height: 450px;"></div>'
         sorted_proc = np.sort(self.data_time.keys())
         for proc in sorted_proc:
             js += self.format_data_piechart_js_perproc(
-                areas=['Time spent (s)', 'Average memory (Mb)'],
-                div='proc%s' % proc,
-                proc=proc)
+                div='proc%s' % proc, proc=proc)
             divs += '<div id="proc%s"' % proc
             divs += 'style="width: 950px; height: 450px;"></div>'
         with open(os.path.join(self.output, 'summary_allproc.html'), 'a') as f:
@@ -238,6 +329,21 @@ class Plot_Data():
 
                 </body>
             </html>""" % (divs, js))
+
+def time_units(val, output='s'):
+    """
+    Change units for time. By default time is measured in seconds.
+    Available options: hour, min, s (default), ms, us.
+
+    Parameters
+    -----------
+        * val: float, input time value in seconds.
+        * output: string, desired units.
+            Available options: hour, min, s (default), ms, us.
+    """
+    units = {'hour': 1./3600,'min': 1./60, 's': 1, 'ms': 1e3, 'us': 1e6}
+
+    return val * units(output)
 
 def addargs(parser):
     ''' Parse command line arguments '''
@@ -266,125 +372,3 @@ def main():
 
 if __name__ == "__main__":
         main()
-
-# from plotlyjs import *
-
-
-# def analyze_file(fname, port):
-#     with open(fname, 'r') as f:
-#         lines = [json.loads(line) for line in f]
-#     macs_to_add = []
-#     for data in lines:
-#         for c in data['cellphones']:
-#             if c['rssi'] > -80 and c['mac'] not in macs_to_add:
-#                 macs_to_add.append(c['mac'])
-#     mac_data = {mac: {'y': []} for mac in macs_to_add}
-#     num = {'x': [], 'y': []}
-#     for data in lines:
-#         rssi = {}
-#         for mac in macs_to_add:
-#             rssi[mac] = -100
-#             for c in data['cellphones']:
-#                 if c['mac'] in rssi:
-#                     rssi[c['mac']] = c['rssi']
-#         for mac in mac_data:
-#             mac_data[mac]['y'].append(str(rssi[mac] + 100))
-#         num['x'].append("'" + datetime.datetime.fromtimestamp(
-#             data['time']).isoformat().split('.')[0].replace('T', ' ') + "'")
-#         num['y'].append(str(len(data['cellphones'])))
-#
-#     mac_names = copy.deepcopy(macs_to_add)
-#     for i, mac in enumerate(mac_names):
-#         mac_names[i] = 'mac' + mac.replace(':', '')
-#
-#     # remove pings
-#     for mac in mac_data:
-#         for i, y in enumerate(mac_data[mac]['y']):
-#             if y == "0" and i > 2:
-#                 if mac_data[mac]['y'][i - 3] == "0" and (mac_data[mac]['y'][i - 1] != "0" or mac_data[mac]['y'][i - 2] != "0"):
-#                     mac_data[mac]['y'][i - 1] = "0"
-#                     mac_data[mac]['y'][i - 2] = "0"
-#
-#     js = ""
-#     js += ('timex = [%s]' % ', '.join(num['x']))
-#     for i, mac in enumerate(macs_to_add):
-#         js += ('\nvar %s = {' % mac_names[i])
-#         js += ('\n  x: timex,')
-#         js += ('\n  y: [%s],' % ', '.join(mac_data[mac]['y']))
-#         js += ("\n name: '%s', mode: 'lines', type:'scatter' };\n\n" % mac)
-#     js += ('\n\nvar data = [%s];' % ', '.join(mac_names))
-#     js += ("\n\nPlotly.newPlot('myDiv',data,layout2);")
-#     js += ('\nvar num_cellphones = {')
-#     js += ('\n  x: timex,')
-#     js += ('\n  y: [%s],' % ', '.join(num['y']))
-#     js += ("\n name: 'N', mode: 'lines', type:'scatter' };\n\n")
-#     js += ("\n\nPlotly.newPlot('myDiv2',[num_cellphones],layout1);")
-#
-#     with open('index.html', 'w') as f:
-#         f.write("""<html><head>
-#         <!-- Plotly.js -->
-#         <script type="text/javascript" src="https://cdn.plot.ly/plotly-1.27.0.min.js"></script>
-#     </head>
-#     <body>
-#         <div id="myDiv2" style="width: 950px; height: 350px;">
-#             <!-- Plotly chart will be drawn inside this DIV -->
-#         </div>
-#         <div id="myDiv" style="width: 950px; height: 350px;">
-#             <!-- Plotly chart will be drawn inside this DIV -->
-#         </div>
-#         <script>
-# var layout1 = {
-#   title: 'Total Count',
-#   xaxis: {
-#     title: 'date',
-#     titlefont: {
-#       family: 'Courier New, monospace',
-#       size: 18,
-#       color: '#7f7f7f'
-#     }
-#   },
-#   yaxis: {
-#     title: 'number',
-#     titlefont: {
-#       family: 'Courier New, monospace',
-#       size: 18,
-#       color: '#7f7f7f'
-#     }
-#   }
-# };
-# var layout2 = {
-#   title: 'Individual traces',
-#   xaxis: {
-#     title: 'date',
-#     titlefont: {
-#       family: 'Courier New, monospace',
-#       size: 18,
-#       color: '#7f7f7f'
-#     }
-#   },
-#   yaxis: {
-#     title: 'rssi',
-#     titlefont: {
-#       family: 'Courier New, monospace',
-#       size: 18,
-#       color: '#7f7f7f'
-#     }
-#   }
-# };
-#     %s
-#         </script>
-#     </body></html>""" % (js))
-#     print("Wrote index.html")
-#     print("Open browser to http://localhost:" + str(port))
-#     print("Type Ctl+C to exit")
-#     if sys.version_info >= (3, 0):
-#         # Python 3 code in this block
-#         from http.server import HTTPServer, SimpleHTTPRequestHandler
-#         httpd = HTTPServer(('localhost', port), SimpleHTTPRequestHandler)
-#         httpd.serve_forever()
-#     else:
-#         # Python 2 code in this block
-#         import SimpleHTTPServer
-#         import SocketServer
-#         httpd = SocketServer.TCPServer(("", port), SimpleHTTPServer.SimpleHTTPRequestHandler)
-# httpd.serve_forever()
