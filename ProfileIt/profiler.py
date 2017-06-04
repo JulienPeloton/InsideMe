@@ -16,18 +16,16 @@ else:
     print('Set by default to 1024 (kB to Mb).\n')
     MEMORY_CONV = 1024.
 
-
-def benchmark(CONV=None, field=None):
+def benchmark(field=''):
     """
     Record the time in second that a function takes to execute and
     the memory consumption of that function.
 
     Parameters
     ----------
-        * CONV: string, convert units. By default units are second. User can
-            specify hour, min, ms, us.
         * field: string, keyword to identify the main purpose of the function
-            to be benchmarked: I/O, computation, etc.
+            to be benchmarked: I/O, computation, etc. If empty, field will
+            be the at symbol followed by the name of the benchmarked function.
     """
     ## accessing and assigning variables with python 2.7...
     ## TODO fix this workaround
@@ -47,8 +45,8 @@ def benchmark(CONV=None, field=None):
             m1 = resource.getrusage(
                 resource.RUSAGE_SELF).ru_maxrss / MEMORY_CONV
             fname = 'logproc_%d_%d.log' % (comm.rank, comm.size)
-            if field[0] is None:
-                name = func.__name__
+            if field[0] == '':
+                name = '@' + func.__name__
             else:
                 name = field[0]
             with open(fname, 'a') as f:
