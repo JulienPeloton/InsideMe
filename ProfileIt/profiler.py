@@ -1,15 +1,7 @@
-import communication as comm
-from time import time
-from time import localtime
 from os import uname
-from os import makedirs
 import resource
 
-## Should be replace by automatic versioning
-VERSION = 'ProfileIt v0.1.0'
-
-## True is good
-DEBUG = True
+import communication as comm
 
 ## The conversion factor used for the memory
 ## consumption depends on the machine.
@@ -38,7 +30,7 @@ def benchmark(CONV=None, field=None):
             to be benchmarked: I/O, computation, etc.
     """
     ## accessing and assigning variables with python 2.7...
-    ## TODO fix this horrible workaround
+    ## TODO fix this workaround
     field = [field]
     def outer_wrapper(func):
         """
@@ -49,9 +41,9 @@ def benchmark(CONV=None, field=None):
         def inner_wrapper(*args, **kwargs):
             m0 = resource.getrusage(
                 resource.RUSAGE_SELF).ru_maxrss / MEMORY_CONV
-            t0 = time()
+            t0 = comm.Wtime()
             res = func(*args, **kwargs)
-            t1 = time()
+            t1 = comm.Wtime()
             m1 = resource.getrusage(
                 resource.RUSAGE_SELF).ru_maxrss / MEMORY_CONV
             fname = 'logproc_%d_%d.log' % (comm.rank, comm.size)
