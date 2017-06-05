@@ -4,7 +4,7 @@ InsideMe
 ### The package
 InsideMe is a simple yet effective python module for monitoring
 memory consumption and duration of python codes.
-Especially relevant when using MPI, it makes use of decorators.
+Work for both serial codes and parallel programming (MPI).
 
 ### Before starting
 This code has the following dependencies (see the travis install section):
@@ -40,7 +40,7 @@ def myfunc(args):
 The profiler will collect informations during the execution of the program,
 and store it on a log file. By default, the profiler will use the name of the function for future reference.
 It is often the case that one wants to group functions under categories.
-You can specify this in the decorator directly:
+You can specify this by directly passing category (field) as parameter to the decorator:
 
 ```python
 ## content of toto.py
@@ -78,12 +78,6 @@ python InsideMe/analyzer.py --output prof/
 The analyzer will create a folder given by the output argument, store the logs in it
 and produce a html file with plots shownig the time spent and memory consumption per processors.
 Open the file in your browser, you should see:
-
-![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/outputs.png)
-![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/outputs.png)
-![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/outputs.png)
-![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/outputs.png)
-![ScreenShot](https://github.com/JulienPeloton/LaFabrique/blob/master/additional_files/outputs.png)
 
 ### Problems known
 * TBD
