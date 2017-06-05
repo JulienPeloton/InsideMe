@@ -1,7 +1,7 @@
 InsideMe
 ==
 
-#### The package
+### The package
 InsideMe is a simple yet effective python module for monitoring
 memory consumption and duration of python codes.
 Especially relevant when using MPI, it makes use of decorators.
