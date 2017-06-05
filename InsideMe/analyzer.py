@@ -4,7 +4,7 @@ import glob
 import argparse
 
 import numpy as np
-import pylab as pl
+from matplotlib.pyplot import rcParams
 
 class Analyze_Output():
     """ Yo """
@@ -132,7 +132,7 @@ class Plot_Data():
         """
 
         """
-        prop_cycle = pl.rcParams['axes.prop_cycle']
+        prop_cycle = rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
 
         procs = self.data_time.keys()
@@ -225,7 +225,7 @@ class Plot_Data():
         """
 
         """
-        prop_cycle = pl.rcParams['axes.prop_cycle']
+        prop_cycle = rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
 
         ## Time plot
@@ -302,17 +302,27 @@ class Plot_Data():
         return js
 
     def pie_chart(self):
+        """
+        """
+        sorted_proc = np.sort(self.data_time.keys())
+        nproc = len(sorted_proc)
         divs = ''
         js = ''
-        js += self.format_data_piechart_js_allproc(div='allprocs')
-        divs += '<div id="allprocs"'
-        divs += 'style="width: 950px; height: 450px;"></div>'
-        sorted_proc = np.sort(self.data_time.keys())
+
+        ## If more than 1 processor, output a summary
+        if nproc > 1:
+            js += self.format_data_piechart_js_allproc(div='allprocs')
+            divs += '<div id="allprocs"'
+            divs += 'style="width: 950px; height: 450px;"></div>'
+
+        ## Details of each processor
         for proc in sorted_proc:
             js += self.format_data_piechart_js_perproc(
                 div='proc%s' % proc, proc=proc)
             divs += '<div id="proc%s"' % proc
             divs += 'style="width: 950px; height: 450px;"></div>'
+
+        ## Write output in html file
         with open(os.path.join(self.output, 'summary_allproc.html'), 'a') as f:
             f.write("""
             <html>
