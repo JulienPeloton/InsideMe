@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (C) 2017 Peloton
-"""Distutils based setup script for ProfileIt.
+"""Distutils based setup script for InsideMe.
 
 For the easiest installation just type the command (you'll probably need
 root privileges for that):
@@ -27,13 +27,14 @@ from setuptools import setup
 
 if __name__ == "__main__":
     setup(name='InsideMe',
-        version='0.1.0',
+        version='0.1.1',
         author='Julien Peloton',
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/InsideMe',
         install_requires=['mpi4py'],
         packages=['InsideMe'],
-        description='',
+        description='Python module for monitoring memory consumption and duration of python codes.\
+        Work for both serial codes and parallel programming (MPI).',
         classifiers=[
             "Programming Language :: Python :: 2",
             'Programming Language :: Python :: 2.7'],)
