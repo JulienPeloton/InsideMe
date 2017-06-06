@@ -62,7 +62,11 @@ def myfunc3(args):
 def myfunc4(args):
     ...
 ```
+Once your run is done, analyze the logs using the analyzer:
 
+```bash
+python analyzer.py --output <folder>
+```
 ### End-to-end example
 
 Try to run the test script provided on 4 processors:
