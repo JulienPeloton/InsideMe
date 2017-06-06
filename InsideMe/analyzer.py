@@ -6,25 +6,49 @@ import argparse
 import numpy as np
 from matplotlib.pyplot import rcParams
 
+def check_logfiles(fns):
+    """
+    Make sure that you analyze log files from the same run.
+    All logfiles from the same run have the same id in 2nd position
+    in the filename (which is the starting time).
+
+    Parameters
+    -----------
+        * fns: list of strings, contain the names of the log files to analyze.
+    """
+    id_ = [fn.split('_')[1] for fn in fns]
+    assert len(np.unique(id_)) == 1, \
+    'You are trying to analyze log files from different runs!'
+
+## TODO: I reckon the interface is a bit rude. If time permits
+## I need to write a better interface.
 class Analyze_Output():
-    """ Yo """
+    """ Analyze log files produced by InsideMe """
     def __init__(self, output):
         """
+        Create the output folder to store outputs.
+        Extract duration and memory consumption per processor.
+
+        Parameters
+        -----------
+            * output: string, the name of the output folder.
         """
         self.output = output
         self.input_header = [
-            'Processor', 'Number of Processor',
+            'Processor', 'Number of Processors',
             'Function', 'Time Input (s)', 'Time Output (s)',
             'Memory Input (Mb)', 'Memory Output (Mb)',
-            'Area']
+            'Field']
 
         self.output_header = [
-            'Area', 'Number of calls', 'Time spent (s)', 'Time (s)',
+            'Field', 'Number of calls', 'Time spent (s)', 'Time (s)',
             'Memory consumption (Mb)']
 
         if not os.path.isdir(self.output):
+            fns = glob.glob('logproc_*.log')
+            check_logfiles(fns)
+
             os.makedirs(self.output)
-            fns = glob.glob('*.log')
             for fn in fns:
                 shutil.move(fn, self.output)
 
@@ -34,11 +58,12 @@ class Analyze_Output():
 
     def full_stats_per_processors(self):
         """
+        Extract data from the log files into a dictionary.
         """
         fns = glob.glob(os.path.join(self.output, '*.log'))
         dic = {}
         for fn in fns:
-            data = np.loadtxt(fn, dtype=str, delimiter='/').T
+            data = np.loadtxt(fn, dtype=str, delimiter='//').T
             proc = data[0][1]
             dic[proc] = {}
             for pos, k in enumerate(self.input_header):
@@ -47,36 +72,47 @@ class Analyze_Output():
 
     def time_per_processor(self, input_dic):
         """
+        Extract the duration times, and group it per field.
+        Structure of the output:
+            Processor
+                |-- Field
+                    |-- Number of calls
+                    |-- Time spent (s)
+
+        Parameters
+        -----------
+            * input_dic: dictionary, data from the log files.
         """
         output_dic = {k:{} for k in input_dic.keys()}
+
         for proc in input_dic.keys():
-            ## Dictionary containing the time spent
-            ## per call for all areas, and total number of calls.
+            ## Dictionary containing the duration
+            ## per call for all fields, and total number of calls.
             output_dic[proc] = {
                 k:{i:j for i,j in zip(
                         ['Number of calls', 'Time spent (s)'], [0, []])}
-                        for k in np.unique(input_dic[proc]['Area'])}
+                        for k in np.unique(input_dic[proc]['Field'])}
 
-            ## Group all times spent per area
-            for pos, area in enumerate(input_dic[proc]['Area']):
-                output_dic[proc][area]['Number of calls'] += 1
+            ## Group all times spent per field
+            for pos, field in enumerate(input_dic[proc]['Field']):
+                output_dic[proc][field]['Number of calls'] += 1
 
                 time_out = float(input_dic[proc]['Time Output (s)'][pos])
                 time_in = float(input_dic[proc]['Time Input (s)'][pos])
-                output_dic[proc][area]['Time spent (s)'].append(
+                output_dic[proc][field]['Time spent (s)'].append(
                     time_out - time_in)
 
-            ## Sum time values per area
-            for pos, area in enumerate(output_dic[proc].keys()):
-                output_dic[proc][area]['Time spent (s)'] = np.sum(
-                    output_dic[proc][area]['Time spent (s)'])
+            ## Sum time values per field
+            for pos, field in enumerate(output_dic[proc].keys()):
+                output_dic[proc][field]['Time spent (s)'] = np.sum(
+                    output_dic[proc][field]['Time spent (s)'])
 
             ## Compute the total amount of time between
             ## the first call and the last call
             total_time_recorded = 0.
-            for pos, area in enumerate(output_dic[proc].keys()):
+            for pos, field in enumerate(output_dic[proc].keys()):
                 total_time_recorded += output_dic[
-                    proc][area]['Time spent (s)']
+                    proc][field]['Time spent (s)']
 
             ## Find the leftover: total_time - total_time_recorded
             output_dic[proc]['Others'] = {
@@ -89,23 +125,34 @@ class Analyze_Output():
 
     def memory_per_processor(self, input_dic):
         """
+        Extract the memory consumption, and group it per field.
+        Structure of the output:
+            Processor
+                |-- Function name (in/out)
+                |-- Field (in/out)
+                |-- Memory consumption [Mb] (in/out)
+                |-- Time [s] (in/out)
+
+        Parameters
+        -----------
+            * input_dic: dictionary, data from the log files.
         """
         output_dic = {k:{} for k in input_dic.keys()}
         for proc in input_dic.keys():
             ## Dictionary containing the memory consumption
-            ## per call for all areas, as a function of time
+            ## per call for all fields, as a function of time
             output_dic[proc] = {i:j for i,j in zip(
                         ['Function',
-                        'Area',
+                        'Field',
                         'Memory consumption (Mb)',
                         'Time (s)'], [[], [], [], []])}
 
-            ## Group all times spent per area
+            ## Group all times spent per field
             for pos, function in enumerate(input_dic[proc]['Function']):
                 output_dic[proc]['Function'].append(function + ' (in)')
                 output_dic[proc]['Function'].append(function + ' (out)')
-                output_dic[proc]['Area'].append(input_dic[proc]['Area'][pos])
-                output_dic[proc]['Area'].append(input_dic[proc]['Area'][pos])
+                output_dic[proc]['Field'].append(input_dic[proc]['Field'][pos])
+                output_dic[proc]['Field'].append(input_dic[proc]['Field'][pos])
 
                 output_dic[proc]['Memory consumption (Mb)'].append(
                     float(input_dic[proc]['Memory Input (Mb)'][pos]))
@@ -119,18 +166,22 @@ class Analyze_Output():
 
         return output_dic
 
-
 class Plot_Data():
+    """
+    Plot the data from the log files.
+    The plots are done directly in javascript (using plotly-1.27.0.min.js),
+    because python API for plotly requires login credentials...
+    Et je n'ai pas envie d'ouvrir un compte ;-)
+    """
     def __init__(self, data_time, data_memory, output):
-        """
-        """
+        """ Initialize data """
         self.data_time = data_time
         self.data_memory = data_memory
         self.output = output
 
     def format_data_piechart_js_allproc(self, div='MyDiv'):
         """
-
+        Summary including all processorsx
         """
         prop_cycle = rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
@@ -141,7 +192,7 @@ class Plot_Data():
             for k in self.data_time[proc].keys():
                 data_time_tot[proc] += self.data_time[proc][k]['Time spent (s)']
 
-        ## Time plot
+        ## Duration plot
         js = ''
         js += 'var data1 = {'
         js += 'values: ['
@@ -156,6 +207,8 @@ class Plot_Data():
         for pos_proc, proc in enumerate(procs):
             js += '"%s", ' % colors[int(proc)]
         js += ']},'
+
+        # style
         js += 'domain: {'
         js += 'x: [%.2f, %.2f],' % (0.0, 0.4)
         js += 'y: [0, 1.0],'
@@ -168,24 +221,27 @@ class Plot_Data():
         js += '\n'
 
         ## Memory consumption plot
+        start_time = np.min([
+                np.min(
+                    [self.data_memory[proc]['Time (s)'] for proc in procs])])
+
         for proc in procs:
             js += 'var data_proc%s = ' % proc
             js += '{'
-            js += "type: 'scatter',"
-            js += "mode: 'lines',"
+
+            # data
             js += 'x: ['
             for k in self.data_memory[proc]['Time (s)']:
-                js += '%.3f, ' % (k - self.data_memory[proc]['Time (s)'][0])
+                js += '%.3f, ' % (k - start_time)
             js += '],'
             js += 'y: ['
             for k in self.data_memory[proc]['Memory consumption (Mb)']:
                 js += '%.3f, ' % k
             js += '],'
-            # js += 'text: ['
-            # for pos_k, k in enumerate(
-            #     self.data_memory[proc]['Function']):
-            #     js += '"%s (%s)", ' % (k, self.data_memory[proc]['Area'][pos_k])
-            # js += '],'
+
+            # style
+            js += "type: 'scatter',"
+            js += "mode: 'lines',"
             js += 'line: { color: "%s"},' % colors[int(proc)]
             js += "name: 'Memory (Mb): proc %s'," % proc
             js += "xaxis: 'x2',"
@@ -193,12 +249,13 @@ class Plot_Data():
             js += "hoverinfo: 'name+x+y'"
             js += '};\n'
 
-        # js += 'var data = [data1, data2];'
+        ## Add all procs
         js += 'var data = [data1, '
         for proc in procs:
             js += 'data_proc%s,' % proc
         js += '];'
 
+        ## Layout for the two subplots
         js += 'var layout = {'
         js += 'title: "Summary all processors (%s)",' % (
             len(self.data_time.keys()))
@@ -223,12 +280,12 @@ class Plot_Data():
 
     def format_data_piechart_js_perproc(self, div='MyDiv', proc='0'):
         """
-
+        Plot the details for a given processor.
         """
         prop_cycle = rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
 
-        ## Time plot
+        ## Duration plot
         js = ''
         js += 'var data1 = {'
         js += 'values: ['
@@ -255,12 +312,20 @@ class Plot_Data():
         js += '\n'
 
         ## Memory consumption plot
+        start_time = np.min([
+                np.min(
+                    [self.data_memory[k]['Time (s)'] for k in self.data_memory.keys()])])
+
+        stop_time = np.max([
+                np.max(
+                    [self.data_memory[k]['Time (s)'] for k in self.data_memory.keys()])])
+
         js += 'var data2 = {'
         js += "type: 'scatter',"
         js += "mode: 'lines+markers',"
         js += 'x: ['
         for k in self.data_memory[proc]['Time (s)']:
-            js += '%.3f, ' % (k - self.data_memory[proc]['Time (s)'][0])
+            js += '%.3f, ' % (k - start_time)
         js += '],'
         js += 'y: ['
         for k in self.data_memory[proc]['Memory consumption (Mb)']:
@@ -269,7 +334,7 @@ class Plot_Data():
         js += 'text: ['
         for pos_k, k in enumerate(
             self.data_memory[proc]['Function']):
-            js += '"%s (%s)", ' % (k, self.data_memory[proc]['Area'][pos_k])
+            js += '"%s (%s)", ' % (k, self.data_memory[proc]['Field'][pos_k])
         js += '],'
         js += 'line: { color: "%s"},' % colors[-1]
         js += "name: 'Memory consumption (Mb)',"
@@ -293,7 +358,10 @@ class Plot_Data():
         js += 'showgrid: false, '
         js += 'showline: false},'
         js += "yaxis2: {anchor: 'x2', title: 'Memory consumption (Mb)'},"
-        js += 'xaxis2: {domain: [0.6, 1.0], title: "Time (s)"},'
+        js += 'xaxis2: {domain: [0.6, 1.0], title: "Time (s)",'
+
+        ## Add 10% for the range of time for visualisation
+        js += 'range: [0., %.3f]},' % (1.1*(stop_time - start_time))
         js += 'height: 450,'
         js += 'width: 1200};'
         js += '\n'
@@ -363,7 +431,7 @@ def addargs(parser):
 
 def grabargs(args_param=None):
     ''' Parse command line arguments '''
-    parser = argparse.ArgumentParser(description='Analyze logs from ProfileIt')
+    parser = argparse.ArgumentParser(description='Analyze logs from InsideMe')
     addargs(parser)
     args = parser.parse_args(args_param)
     return args
