@@ -19,7 +19,7 @@ else:
 def benchmark(field=''):
     """
     Record the time in second that a function takes to execute and
-    the memory consumption of that function.
+    the memory consumption in Mb of that function.
 
     Parameters
     ----------
@@ -37,26 +37,38 @@ def benchmark(field=''):
             * func: function, the function to be benchmarked
         """
         def inner_wrapper(*args, **kwargs):
+            """
+            Compute the duration and the memory consumption of the
+            benchmarked function. Duration is computed from Wtime (or time if
+            MPI is not set). Memory consumption is computed from
+            the module resource.
+            """
+            ## Start
             m0 = resource.getrusage(
                 resource.RUSAGE_SELF).ru_maxrss / MEMORY_CONV
             t0 = comm.Wtime()
+
+            ## Call to function
             res = func(*args, **kwargs)
+
+            ## End
             t1 = comm.Wtime()
             m1 = resource.getrusage(
                 resource.RUSAGE_SELF).ru_maxrss / MEMORY_CONV
-            fname = 'logproc_%d_%d.log' % (comm.rank, comm.size)
+
+            ## Write bunch of infos inside a log file
             if field[0] == '':
                 name = '@' + func.__name__
             else:
                 name = field[0]
-            with open(fname, 'a') as f:
-                f.write(
-                    "{}/{}/@{}/{:0.3f}/{:0.3f}/{:0.3f}/{:0.3f}/{}\n".format(
-                        comm.rank, comm.size,
-                        func.__name__,
-                        t0, t1,
-                        m0, m1,
-                        name))
+            msg = "{}//{}//@{}//{:0.3f}//{:0.3f}//{:0.3f}//{:0.3f}//{}\n".format(
+                comm.rank, comm.size,
+                func.__name__,
+                t0, t1,
+                m0, m1,
+                name)
+            with open(comm.fname, 'a') as f:
+                f.write(msg)
             return res
         return inner_wrapper
     return outer_wrapper
