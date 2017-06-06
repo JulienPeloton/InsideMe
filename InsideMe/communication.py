@@ -9,16 +9,24 @@ try:
     rank = MPI.COMM_WORLD.Get_rank()
     size = MPI.COMM_WORLD.Get_size()
     barrier = MPI.COMM_WORLD.Barrier
-    finalize = MPI.Finalize
     Wtime = MPI.Wtime
+    bcast = MPI.COMM_WORLD.bcast
     if verbose:
         print 'Parallel setup OK, rank %s in %s' % (rank, size)
 except:
-    # No mpi4py
+    # mpi4py not found or serial call
     rank = 0
     size = 1
     barrier = lambda: -1
-    finalize = lambda: -1
     Wtime = time.time
+    def bcast(data, root):
+        return data
     if verbose:
         print 'No mpi4py found - switching to serial mode'
+
+if rank == 0:
+    start = Wtime()
+else:
+    start = None
+start = bcast(start, root=0)
+fname = 'logproc_%d_%d_%d.log' % (start, rank, size)
