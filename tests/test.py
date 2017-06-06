@@ -39,7 +39,7 @@ def accumulate_data(dataset, rank):
 
     return mat
 
-@profiler.benchmark(field='IO')
+@profiler.benchmark(field='I/O')
 def write_on_disk(mat, fname):
     """
     Write and delete files on disk
