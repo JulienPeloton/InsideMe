@@ -27,7 +27,7 @@ from setuptools import setup
 
 if __name__ == "__main__":
     setup(name='InsideMe',
-        version='0.1.1',
+        version='0.2.0',
         author='Julien Peloton',
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/InsideMe',
@@ -35,6 +35,9 @@ if __name__ == "__main__":
         packages=['InsideMe'],
         description='Python module for monitoring memory consumption and duration of python codes.\
         Work for both serial codes and parallel programming (MPI).',
+        license='GPL-3.0',
+        long_description='See https://github.com/JulienPeloton/InsideMe',
+        keywords=['profiling', 'MPI', 'testing'],
         classifiers=[
             "Programming Language :: Python :: 2",
             'Programming Language :: Python :: 2.7'],)
