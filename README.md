@@ -53,19 +53,19 @@ category (field) as parameter to the decorator:
 ## content of toto.py
 from InsideMe import profiler
 
-@profiler.benchmark(field='I/O')
+@profiler.benchmark(field='something')
 def myfunc1(args):
     ...
 
-@profiler.benchmark(field='Core computation')
+@profiler.benchmark(field='something else')
 def myfunc2(args):
     ...
 
-@profiler.benchmark(field='Core computation')
+@profiler.benchmark(field='something else')
 def myfunc3(args):
     ...
 
-@profiler.benchmark(field='Communication')
+@profiler.benchmark(field='something')
 def myfunc4(args):
     ...
 ```
