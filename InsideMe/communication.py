@@ -11,6 +11,7 @@ try:
     barrier = MPI.COMM_WORLD.Barrier
     Wtime = MPI.Wtime
     bcast = MPI.COMM_WORLD.bcast
+    comm = MPI.COMM_WORLD
     if verbose:
         print 'Parallel setup OK, rank %s in %s' % (rank, size)
 except:
