@@ -1,4 +1,4 @@
-InsideMe
+InsideMe [![Build Status](https://travis-ci.org/JulienPeloton/InsideMe.svg?branch=master)](https://travis-ci.org/JulienPeloton/InsideMe)
 ==
 
 ### The package
