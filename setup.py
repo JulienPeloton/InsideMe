@@ -31,7 +31,7 @@ if __name__ == "__main__":
         author='Julien Peloton',
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/InsideMe',
-	download_url='',
+        download_url='',
         install_requires=['mpi4py'],
         packages=['InsideMe'],
         description='Python module for monitoring memory consumption \
