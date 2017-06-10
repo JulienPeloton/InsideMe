@@ -73,7 +73,7 @@ def myfunc4(args):
 Once your run is done, analyze the logs using the analyzer:
 
 ```bash
-analyzer --output <folder>
+AnalyzeMe --output <folder>
 ```
 
 The analyzer will create a folder given by the output argument, store the logs in it
@@ -89,9 +89,9 @@ If necessary, change mpirun with your favourite shell script for running MPI app
 You should see 4 log files created in your root folder of the form ` logproc_proc#_total.log `
 Analyze those outputs using the analyzer:
 ```bash
-analyzer --output prof/
+AnalyzeMe --output prof/
 ```
-Open the html file produced in your browser, you should see something like
+Open the html file produced in your browser, you should see something like (interactive plots)
 
 <img src="tests/summary.png" alt="Drawing" style="width: 600px;"/>
 <img src="tests/proc0.png" alt="Drawing" style="width: 600px;"/>
@@ -99,8 +99,11 @@ Open the html file produced in your browser, you should see something like
 <img src="tests/proc2.png" alt="Drawing" style="width: 600px;"/>
 <img src="tests/proc3.png" alt="Drawing" style="width: 600px;"/>
 
-### Problems known
+### Future development
 * TBD
+
+### Problems known (and hopefully fixed soon!)
+* New logs with same output are not analyzed
 
 ### License
 GNU License (see the LICENSE file for details) covers all files
