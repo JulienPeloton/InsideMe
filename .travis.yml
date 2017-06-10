@@ -2,7 +2,6 @@ language: python
 python:
     - "2.7"
 install:
-    - pip install --upgrade pip setuptools wheel
     - pip install numpy matplotlib
     - pip install mpi4py
     - python setup.py install
