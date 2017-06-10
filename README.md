@@ -107,4 +107,4 @@ Open the html file produced in your browser, you should see something like (inte
 
 ### License
 GNU License (see the LICENSE file for details) covers all files
-in the LaFabrique repository unless stated otherwise.
+in AnalyzeMe repository unless stated otherwise.
