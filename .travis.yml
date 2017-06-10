@@ -11,6 +11,7 @@ before_install:
     - conda update --yes conda
 install:
     - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy matplotlib mpi4py
+    - python setup.py install
 
 script:
     - python tests/test.py
