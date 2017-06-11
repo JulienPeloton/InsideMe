@@ -39,7 +39,7 @@ function and its memory usage, simply add a decorator
 ## content of toto.py
 from InsideMe import profiler
 
-@profiler.benchmark
+@profiler.benchmark()
 def myfunc(args):
     ...
 ```

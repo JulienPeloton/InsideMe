@@ -35,7 +35,7 @@ if __name__ == "__main__":
         install_requires=['mpi4py'],
         packages=['InsideMe'],
         description='Python module for monitoring memory consumption \
-        and duration of python codes.Work for both serial codes and \
+        and duration of python codes. Work for both serial codes and \
         parallel programming (MPI).',
         license='GPL-3.0',
         long_description='See https://github.com/JulienPeloton/InsideMe',

@@ -69,9 +69,9 @@ def Reduce(mat, root):
     out = comm.comm.reduce(mat, op=comm.MPI.SUM, root=root)
     return out
 
-## We decide to not monitor this one for example
-## It will be categorized in the <Others> field in plots.
-def random_generator(
+## We decide to not categorize this one for example
+@profiler.benchmark()
+def random_name(
     size=6, chars=string.ascii_uppercase + string.digits):
     """
     Just for the fun.
@@ -84,5 +84,5 @@ if __name__ == "__main__":
         mat = accumulate_data(dataset, size=comm.size)
         mat = Reduce(mat, root=0)
         if comm.rank == 0:
-            write_on_disk(mat, '%s.npy' % random_generator())
+            write_on_disk(mat, '%s.npy' % random_name())
     comm.barrier()
