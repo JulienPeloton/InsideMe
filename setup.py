@@ -27,11 +27,11 @@ from setuptools import setup
 
 if __name__ == "__main__":
     setup(name='InsideMe',
-        version='0.2.0',
+        version='0.2.1',
         author='Julien Peloton',
         author_email='j.peloton@sussex.ac.uk',
         url='https://github.com/JulienPeloton/InsideMe',
-        download_url='',
+        download_url='https://github.com/JulienPeloton/InsideMe/archive/0.2.1.zip',
         install_requires=['mpi4py'],
         packages=['InsideMe'],
         description='Python module for monitoring memory consumption \
