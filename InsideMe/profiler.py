@@ -27,9 +27,6 @@ def benchmark(field=''):
             to be benchmarked: I/O, computation, etc. If empty, field will
             be the at symbol followed by the name of the benchmarked function.
     """
-    ## accessing and assigning variables with python 2.7...
-    ## TODO fix this workaround
-    field = [field]
     def outer_wrapper(func):
         """
         Parameters
@@ -71,4 +68,13 @@ def benchmark(field=''):
                 f.write(msg)
             return res
         return inner_wrapper
-    return outer_wrapper
+
+    if type(field) == str:
+        ## accessing and assigning variables with python 2.7...
+        ## TODO fix this workaround
+        field = [field]
+        return outer_wrapper
+    else:
+        ## This means the user didn't specify field.
+        ## In this case field is the decorated function!
+        return outer_wrapper(field)
