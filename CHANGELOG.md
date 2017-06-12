@@ -2,7 +2,7 @@
 * TBD
 
 # v0.2.1
-* bug fix: allow the profiler to work even if <field> is not present.
+* bug fix: allow the profiler to work even if the argument is not present.
 * Increase code coverage in test.py
 
 # v0.2.0
