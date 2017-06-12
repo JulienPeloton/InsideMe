@@ -34,6 +34,7 @@ if __name__ == "__main__":
         download_url='https://github.com/JulienPeloton/InsideMe/archive/0.2.1.zip',
         install_requires=['mpi4py'],
         packages=['InsideMe'],
+        scripts=['InsideMe/AnalyzeMe'],
         description='Python module for monitoring memory consumption \
         and duration of python codes. Work for both serial codes and \
         parallel programming (MPI).',
