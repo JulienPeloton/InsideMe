@@ -202,8 +202,12 @@ class Plot_Data():
         """
         prop_cycle = rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
-
         procs = self.data_time.keys()
+
+        ## In case you have more processors than colors available by default
+        while len(colors) < len(procs):
+            colors += colors
+
         data_time_tot = {i:0 for i in procs}
         for proc in procs:
             for k in self.data_time[proc].keys():
@@ -315,6 +319,10 @@ class Plot_Data():
         """
         prop_cycle = rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
+
+        ## In case you have more fields than colors available by default.
+        while len(colors) < len(self.data_time[proc].keys()):
+            colors += colors
 
         ## Duration plot
         js = ''
