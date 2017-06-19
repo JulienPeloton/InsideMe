@@ -53,7 +53,7 @@ def write_on_disk(mat, fname):
             containing the accumulated measurements.
         * fname: string, name of the output file where mat will be saved.
     """
-    np.save(fname ,mat)
+    np.save(fname, mat)
     os.remove(fname)
 
 @profiler.benchmark(field='Communication')
@@ -72,11 +72,12 @@ def Reduce(mat, root):
 ## We decide to not categorize this one for example
 @profiler.benchmark()
 def random_name(
-    size=6, chars=string.ascii_uppercase + string.digits):
+        size=6, chars=string.ascii_uppercase + string.digits):
     """
     Just for the fun.
     """
     return ''.join(random.choice(chars) for x in range(size))
+
 
 if __name__ == "__main__":
     for trial in range(20):
