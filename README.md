@@ -30,6 +30,13 @@ InsideMePATH=/path/to/the/package
 export PYTHONPATH=$PYTHONPATH:$InsideMePATH:$InsideMePATH/InsideMe
 ```
 
+Alternatively if you do not want install the package on your computer,
+you can also use the dockerfile provided to create a docker image:
+```bash
+docker build -t InsideMe .
+docker run -it InsideMe
+```
+
 ### How to use it
 
 The profiling of a code is done using decorators.
@@ -104,6 +111,7 @@ Open the html file produced in your browser, you should see something like (inte
 
 ### Problems known (and hopefully fixed soon!)
 * New logs with same output are not analyzed
+* Fix max time for the summary of processors (always truncated too early)
 
 ### License
 GNU License (see the LICENSE file for details) covers all files
