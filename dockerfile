@@ -11,7 +11,7 @@ WORKDIR /home
 ADD . /home/
 
 RUN apt-get update \
-    && apt-get install -y wget bzip2 python libgl1-mesa-swx11 \
+    && apt-get install -y wget bzip2 python libgl1-mesa-swx11 ssh \
     && wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh \
     && bash miniconda.sh -b -p /home/miniconda \
     && export PATH="/home/miniconda/bin:$PATH" \
