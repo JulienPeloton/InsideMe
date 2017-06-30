@@ -19,4 +19,4 @@ RUN apt-get update \
     && /home/miniconda/bin/conda install --yes python=2.7 pip numpy matplotlib mpi4py \
     && python setup.py install \
     && python tests/test.py \
-    && python InsideMe/AnalyzeMe --output test_docker
+    && AnalyzeMe --output test_docker
