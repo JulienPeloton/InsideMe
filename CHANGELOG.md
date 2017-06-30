@@ -1,5 +1,6 @@
 # Not yet released
-* TBD
+* Allow to display only a limited number of processors
+* Fix the length of colors in the Analyzer (if ncolors < nprocs)
 
 # v0.2.2
 * Include AnalyzeMe in the setup.py (for pip installation)
