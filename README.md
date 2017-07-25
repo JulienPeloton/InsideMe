@@ -36,6 +36,11 @@ you can also use the dockerfile provided to create a docker image:
 docker build -t InsideMe .
 docker run -it InsideMe
 ```
+or pull directly the docker image and launch an interactive session:
+```bash
+docker pull julienpeloton/insideme:latest
+docker run -i -t julienpeloton/insideme:latest bash
+```
 
 ### How to use it
 
