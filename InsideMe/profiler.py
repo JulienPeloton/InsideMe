@@ -67,6 +67,8 @@ def benchmark(field=''):
             with open(comm.fname, 'a') as f:
                 f.write(msg)
             return res
+
+        inner_wrapper.__doc__ = func.__doc__
         return inner_wrapper
 
     if type(field) == str:
